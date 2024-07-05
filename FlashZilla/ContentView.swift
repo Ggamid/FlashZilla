@@ -18,25 +18,58 @@ struct ContentView: View {
     
     @State private var cards = Array<Card>(repeating: .example, count: 10)
     
-    @State var timeRemaining = 10
+    @State var timeRemaining = 100
     
     @Environment(\.scenePhase) var scenePhase
     @State var isActive = true
+    
+    @State private var showingEditScreen = false
     
     let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
     
     var body: some View {
         ZStack{
+            
+            Rectangle()
+                .ignoresSafeArea()
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            
+            Circle()
+                .fill(.blue)
+                .frame(height: 1000)
+
+
             VStack{
-                Text("Time: \(timeRemaining)")
-                    .font(.largeTitle)
-                    .padding()
-                    .background{
-                        Rectangle()
-                            .fill(.black)
-                            .opacity(0.4)
-                            .clipShape(.capsule)
+                HStack{
+                    Spacer()
+                    
+                    Button{
+                        showingEditScreen.toggle()
+                    } label: {
+                        Image(systemName: "plus.circle")
+                            .padding()
+                            .background(.black.opacity(0.7))
+                            .clipShape(.circle)
+                        
                     }
+                }
+//                Spacer()
+            }
+            .foregroundStyle(.white)
+            .font(.largeTitle)
+            .padding()
+            
+            VStack{
+                ZStack{
+                    RoundedRectangle(cornerRadius: 25)
+                        .frame(width: 200, height: 60)
+                        .opacity(0.7)
+                    Text("Time: \(timeRemaining)")
+                        .font(.largeTitle)
+                        .padding()
+                        .foregroundStyle(.white)
+                }
+                    
                 if cards.isEmpty || timeRemaining == 0 {
                     Button{
                         resetCards()
@@ -46,23 +79,25 @@ struct ContentView: View {
                             .padding()
                             .background{
                                 Rectangle()
-                                    .fill(.black)
+                                    .fill(.white)
                                     .opacity(0.4)
                                     .clipShape(.capsule)
                             }
                     }
-                }
-                
-                ZStack{
-                    ForEach(0..<cards.count, id: \.self) { index in
-                        CardView(card: cards[index]) {
-                            withAnimation {
-                                   removeCard(at: index)
-                               }
-                        }
+                } else {
+                    ZStack{
+                        ForEach(0..<cards.count, id: \.self) { index in
+                            CardView(card: cards[index]) {
+                                withAnimation {
+                                    removeCard(at: index)
+                                }
+                            }
                             .stacked(at: index, in: cards.count)
                             .allowsHitTesting(!(timeRemaining == 0))
+                            .allowsHitTesting(index == cards.count - 1)
+                        }
                     }
+                    
                 }
             }
         }
@@ -82,6 +117,9 @@ struct ContentView: View {
                 isActive = false
             }
         }
+        .onAppear(perform: { resetCards() })
+        .sheet(isPresented: $showingEditScreen, onDismiss: resetCards, content: EditView.init)
+        
     }
     
     func removeCard(at index: Int) {
@@ -93,9 +131,17 @@ struct ContentView: View {
     }
     
     func resetCards() {
-        cards = Array<Card>(repeating: .example, count: 10)
+        loadData()
         timeRemaining = 100
         isActive = true
+    }
+    
+    func loadData() {
+        if let data = UserDefaults.standard.data(forKey: "Cards") {
+            if let decoded = try? JSONDecoder().decode([Card].self, from: data) {
+                cards = decoded
+            }
+        }
     }
 }
 
