@@ -9,8 +9,14 @@ import SwiftUI
 
 extension View {
     func stacked(at position: Int, in total: Int) -> some View {
+        
         let offset = Double(total - position)
-        return self.offset(y: offset*10)
+        return self.offset(y: offset*35)
+    }
+    
+    func scaled(at position: Int, in total: Int) -> some View {
+        let offset = Double(total - position)
+        return self.scaleEffect(1-(offset)*0.1)
     }
 }
 
@@ -32,32 +38,11 @@ struct ContentView: View {
             
             Rectangle()
                 .ignoresSafeArea()
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
             
             Circle()
                 .fill(.blue)
                 .frame(height: 1000)
-
-
-            VStack{
-                HStack{
-                    Spacer()
-                    
-                    Button{
-                        showingEditScreen.toggle()
-                    } label: {
-                        Image(systemName: "plus.circle")
-                            .padding()
-                            .background(.black.opacity(0.7))
-                            .clipShape(.circle)
-                        
-                    }
-                }
-//                Spacer()
-            }
-            .foregroundStyle(.white)
-            .font(.largeTitle)
-            .padding()
+                
             
             VStack{
                 ZStack{
@@ -68,6 +53,7 @@ struct ContentView: View {
                         .font(.largeTitle)
                         .padding()
                         .foregroundStyle(.white)
+                        
                 }
                     
                 if cards.isEmpty || timeRemaining == 0 {
@@ -84,7 +70,8 @@ struct ContentView: View {
                                     .clipShape(.capsule)
                             }
                     }
-                } else {
+                }
+                if timeRemaining != 0 && cards.isEmpty == false{
                     ZStack{
                         ForEach(0..<cards.count, id: \.self) { index in
                             CardView(card: cards[index]) {
@@ -93,13 +80,37 @@ struct ContentView: View {
                                 }
                             }
                             .stacked(at: index, in: cards.count)
+                            .scaled(at: index, in: cards.count)
                             .allowsHitTesting(!(timeRemaining == 0))
                             .allowsHitTesting(index == cards.count - 1)
                         }
                     }
-                    
                 }
+                
             }
+            .frame(maxWidth: .infinity)
+            .overlay(alignment: .topTrailing) {
+                VStack{
+                    HStack{
+                        Spacer()
+                        
+                        Button{
+                            showingEditScreen.toggle()
+                        } label: {
+                            Image(systemName: "plus.circle")
+                                .padding()
+                                .background(.black.opacity(0.7))
+                                .clipShape(.circle)
+                                .frame(height: 60)
+                        }
+                    }
+                }
+                .foregroundStyle(.white)
+                .font(.largeTitle)
+                .padding(.trailing, 30)
+                
+            }
+            
         }
         .onReceive(timer, perform: { _ in
             guard isActive else { return }
