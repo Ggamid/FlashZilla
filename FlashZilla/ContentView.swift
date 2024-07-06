@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import SwiftData
 
 extension View {
     func stacked(at position: Int, in total: Int) -> some View {
@@ -21,15 +22,17 @@ extension View {
 }
 
 struct ContentView: View {
-    
-    @State private var cards = Array<Card>(repeating: .example, count: 10)
-    
+  
     @State var timeRemaining = 100
     
     @Environment(\.scenePhase) var scenePhase
     @State var isActive = true
     
     @State private var showingEditScreen = false
+    
+    @Environment(\.modelContext) var modelContext
+    @Query var cardQuery: [Card]
+    @State var cards: [Card] = [Card]()
     
     let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
     
@@ -80,7 +83,7 @@ struct ContentView: View {
                                         removeCard(at: index)
                                     }
                                 } getTry: {
-                                    withAnimation {                              
+                                    withAnimation {
                                         cards.removeLast()
                                         cards.insert(Card(prompt: card.prompt, answer: card.answer), at: 0)
                                     }
@@ -156,11 +159,7 @@ struct ContentView: View {
     }
     
     func loadData() {
-        if let data = UserDefaults.standard.data(forKey: "Cards") {
-            if let decoded = try? JSONDecoder().decode([Card].self, from: data) {
-                cards = decoded
-            }
-        }
+        cards = cardQuery
     }
     
     func findIndexOf(_ card: Card) -> Int? {
@@ -174,5 +173,5 @@ struct ContentView: View {
 }
 
 #Preview {
-    ContentView()
+    ContentView(cards: [Card]())
 }

@@ -6,13 +6,16 @@
 //
 
 import SwiftUI
+import SwiftData
 
 struct EditView: View {
     @Environment(\.dismiss) var dismiss
     @State private var newPrompt = ""
     @State private var newAnswer = ""
     
-    @State private var cards = [Card]()
+
+    @Environment(\.modelContext) var modelContext
+    @Query var cards: [Card]
     
     
     var body: some View {
@@ -47,26 +50,13 @@ struct EditView: View {
                 }
                 
             }
-            .onAppear(perform: loadData)
         }
     }
-    
-    func loadData() {
-        if let data = UserDefaults.standard.data(forKey: "Cards") {
-            if let decoded = try? JSONDecoder().decode([Card].self, from: data) {
-                cards = decoded
-            }
-        }
-    }
+
     
     func deleteCard(at index: IndexSet){
-        cards.remove(atOffsets: index)
-        saveData()
-    }
-    
-    func saveData(){
-        if let data = try? JSONEncoder().encode(cards){
-            UserDefaults.standard.set(data, forKey: "Cards")
+        for i in index {
+            modelContext.delete(cards[i])
         }
     }
     
@@ -77,16 +67,23 @@ struct EditView: View {
         guard prompt.isEmpty == false && answer.isEmpty == false else { return }
         
         let card = Card(prompt: prompt, answer: answer)
-        cards.insert(card, at: 0)
+        modelContext.insert(card)
         
         newPrompt = ""
         newAnswer = ""
-        
-        saveData()
-        
     }
 }
 
 #Preview {
-    EditView()
+    
+    let config = ModelConfiguration(isStoredInMemoryOnly: true)
+    let container = try! ModelContainer(for: Card.self, configurations: config)
+    
+    for _ in 1..<10 {
+        let user = Card(prompt: "somrPrompt", answer: "someAnswer")
+        container.mainContext.insert(user)
+    }
+    
+    return EditView()
+        .modelContainer(container)
 }
