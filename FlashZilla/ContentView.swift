@@ -73,16 +73,24 @@ struct ContentView: View {
                 }
                 if timeRemaining != 0 && cards.isEmpty == false{
                     ZStack{
-                        ForEach(0..<cards.count, id: \.self) { index in
-                            CardView(card: cards[index]) {
-                                withAnimation {
-                                    removeCard(at: index)
+                        ForEach(cards, id: \.id) { card in
+                            if let index = findIndexOf(card){
+                                CardView(card: card) {
+                                    withAnimation {
+                                        removeCard(at: index)
+                                    }
+                                } getTry: {
+                                    withAnimation {                              
+                                        cards.removeLast()
+                                        cards.insert(Card(prompt: card.prompt, answer: card.answer), at: 0)
+                                    }
                                 }
+                                .stacked(at: index, in: cards.count)
+                                .scaled(at: index, in: cards.count)
+                                .allowsHitTesting(!(timeRemaining == 0))
+                                .allowsHitTesting(index == cards.count - 1)
                             }
-                            .stacked(at: index, in: cards.count)
-                            .scaled(at: index, in: cards.count)
-                            .allowsHitTesting(!(timeRemaining == 0))
-                            .allowsHitTesting(index == cards.count - 1)
+                            
                         }
                     }
                 }
@@ -153,6 +161,15 @@ struct ContentView: View {
                 cards = decoded
             }
         }
+    }
+    
+    func findIndexOf(_ card: Card) -> Int? {
+        for i in 0..<cards.count {
+            if cards[i].id == card.id {
+                return i
+            }
+        }
+        return nil
     }
 }
 
